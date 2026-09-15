@@ -1,0 +1,1 @@
+The mobile scene was blank because the directional-light creation used scene.add(light.position.set(...)). Object3D.add() requires an Object3D, while Vector3.set() returns a Vector3. The fix is to create the light first, set its position, then add the light.
