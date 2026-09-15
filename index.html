@@ -1,28 +1,77 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>الحذاء السحري</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>الحذاء السحري — المغامرة الأولى</title>
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101827;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}body{display:flex;align-items:center;justify-content:center}canvas{width:100vw;height:100vh;display:block;touch-action:none}#hint{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:12px;opacity:.55;pointer-events:none;white-space:nowrap}
-</style></head><body><canvas id="game"></canvas><div id="hint">اسحب الشاشة للحركة أو استخدم أزرار اللمس</div>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08111d;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}body{display:flex;align-items:center;justify-content:center}canvas{width:100vw;height:100vh;display:block;touch-action:none}#hint{position:fixed;bottom:5px;left:50%;transform:translateX(-50%);font-size:11px;opacity:.45;pointer-events:none;white-space:nowrap}@media(max-width:600px){#hint{font-size:10px}}
+</style>
+</head>
+<body><canvas id="game"></canvas><div id="hint">اسحب في أي اتجاه للحركة • اقترب من العنصر ثم اضغط تفاعل</div>
 <script>
-const c=document.getElementById('game'),x=c.getContext('2d');let W,H,s=1;
-const st={p:{x:640,y:500},shoe:{x:930,y:220},puz:{x:350,y:300},secret:{x:760,y:420},done:false,has:false,found:false,stars:0,msg:'استكشف المكان وابحث عن الأثر الأول.'};
-const keys={}; addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key===' '||e.key==='Enter')interact()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
-function resize(){W=innerWidth;H=innerHeight;c.width=W*devicePixelRatio;c.height=H*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);s=Math.min(W/1280,H/720)}addEventListener('resize',resize);resize();
+const c=document.getElementById('game'),x=c.getContext('2d');let W,H,s=1,tick=0;
+const SAVE='magic_shoe_adventure_v1';
+const st={p:{x:640,y:510},shoe:{x:980,y:245},puz:{x:330,y:330},secret:{x:770,y:410},done:false,has:false,found:false,stars:0,coins:0,msg:'هناك أثر غريب هنا... اقترب من حجر اللغز.',toast:0};
+const keys={};
+try{Object.assign(st,JSON.parse(localStorage.getItem(SAVE)||'{}'));}catch(e){}
+function save(){try{localStorage.setItem(SAVE,JSON.stringify({p:st.p,done:st.done,has:st.has,found:st.found,stars:st.stars,coins:st.coins}));}catch(e){}}
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key===' '||e.key==='Enter')interact()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+function resize(){W=innerWidth;H=innerHeight;c.width=Math.floor(W*devicePixelRatio);c.height=Math.floor(H*devicePixelRatio);x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);s=Math.min(W/1280,H/720)}addEventListener('resize',resize);resize();
 function pos(e){const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)/s,y:(e.clientY-r.top)/s}}
-let touch=null;c.addEventListener('pointerdown',e=>{touch=pos(e);if(touch.x>1080&&touch.y>570)interact()});c.addEventListener('pointermove',e=>{if(touch){const q=pos(e),dx=q.x-touch.x,dy=q.y-touch.y; if(Math.hypot(dx,dy)>8){move(dx,dy);touch=q}}});c.addEventListener('pointerup',()=>touch=null);
-function move(dx,dy){const n=Math.hypot(dx,dy)||1;st.p.x=Math.max(80,Math.min(1200,st.p.x+dx/n*22));st.p.y=Math.max(150,Math.min(575,st.p.y+dy/n*22))}
+let touch=null;c.addEventListener('pointerdown',e=>{const q=pos(e);if(q.x>1080&&q.y>570){interact();return}touch=q});c.addEventListener('pointermove',e=>{if(!touch)return;const q=pos(e),dx=q.x-touch.x,dy=q.y-touch.y;if(Math.hypot(dx,dy)>7){move(dx,dy);touch=q}});c.addEventListener('pointerup',()=>touch=null);c.addEventListener('pointercancel',()=>touch=null);
+function move(dx,dy){const n=Math.hypot(dx,dy)||1;st.p.x=Math.max(90,Math.min(1190,st.p.x+dx/n*20));st.p.y=Math.max(175,Math.min(555,st.p.y+dy/n*20))}
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
-function interact(){if(!st.done&&dist(st.p,st.puz)<110){st.done=true;st.stars++;st.msg='أحسنت! اتبع النجوم إلى الحذاء.'}else if(st.done&&!st.has&&dist(st.p,st.shoe)<110){st.has=true;st.msg='وجدت الحذاء السحري! ✨ الخطوة الخفية أصبحت متاحة.'}else if(st.has&&!st.found&&dist(st.p,st.secret)<110){st.found=true;st.stars+=2;st.msg='كشفت الخطوة الخفية طريقًا سريًا! +2 نجمة. مهمة العصا مفتوحة.'}else if(st.has)st.msg='مهمتك التالية: العثور على العصا السحرية.';else if(st.done)st.msg='اقترب من الحذاء السحري واضغط تفاعل.';else st.msg='اقترب من حجر اللغز واضغط تفاعل.'}
-function loop(){if(keys['arrowup']||keys['w'])move(0,-1);if(keys['arrowdown']||keys['s'])move(0,1);if(keys['arrowleft']||keys['a'])move(-1,0);if(keys['arrowright']||keys['d'])move(1,0);draw();requestAnimationFrame(loop)}
-function text(t,px,py,size,align='left'){x.font=size+'px system-ui';x.textAlign=align;x.fillStyle='#fff';x.fillText(t,px,py)}
-function draw(){x.save();x.scale(s,s);x.fillStyle='#101827';x.fillRect(0,0,1280,720);x.fillStyle='#17263a';x.fillRect(50,125,1180,480);x.fillStyle='#1d2d43';x.beginPath();x.arc(640,380,285,0,7);x.fill();x.fillStyle='#f4d58d';text('الحذاء السحري',50,55,36);x.fillStyle='#b9c7d9';text('المغامرة الأولى — أثر يقود إلى سر',50,88,20);x.fillStyle='#f4d58d';text('النجوم: '+st.stars,965,55,19);x.fillStyle=st.has?'#9de3b2':'#d6dfeb';text(st.has?'الحذاء: ✓':'الهدف: الحذاء السحري',965,84,18);if(st.has){x.fillStyle='#d6dfeb';text('مهمة العصا: مفتوحة',965,112,18)}
-stone(st.puz);[520,700,850].forEach((a,i)=>{x.fillStyle='#f4d58d';x.beginPath();x.arc(a,255-i*10,10,0,7);x.fill()});if(!st.has){x.fillStyle='#6b4ea2';x.beginPath();x.arc(st.shoe.x,st.shoe.y,58,0,7);x.fill();x.fillStyle='#fff';text('حذاء',st.shoe.x,st.shoe.y+8,22,'center');x.fillStyle='#f4d58d';text('الحذاء السحري',st.shoe.x,st.shoe.y+82,18,'center')}else{node(st.shoe.x,st.shoe.y,'✓','#9de3b2')}
-if(st.has&&!st.found){node(st.secret.x,st.secret.y,'سر','#9de3b2');x.fillStyle='#b9c7d9';text('طريق خفي',st.secret.x,st.secret.y+65,17,'center')}else if(st.found)node(st.secret.x,st.secret.y,'+2','#9de3b2');
-node(st.p.x,st.p.y,'✦','#f4d58d');x.fillStyle='#0b111c';x.fillRect(35,625,1210,48);x.fillStyle='#fff';text(st.msg,60,656,19);['↑','↓','←','→'].forEach((t,i)=>{x.fillStyle='#26384f';x.beginPath();const q=[[140,612],[140,675],[65,644],[215,644]][i];x.arc(q[0],q[1],38,0,7);x.fill();x.fillStyle='#fff';text(t,q[0],q[1]+9,28,'center')});x.fillStyle='#6b4ea2';x.beginPath();x.arc(1165,645,48,0,7);x.fill();x.fillStyle='#fff';text('تفاعل',1165,652,18,'center');x.restore()}
-function stone(p){x.fillStyle='#475a72';x.beginPath();x.arc(p.x,p.y,50,0,7);x.fill();x.fillStyle='#26364d';x.beginPath();x.arc(p.x,p.y,35,0,7);x.fill();x.fillStyle='#f4d58d';text('؟',p.x,p.y+12,34,'center');x.fillStyle='#d6dfeb';text('حجر اللغز',p.x,p.y+78,18,'center')}
-function node(px,py,t,col){x.fillStyle='#30445b';x.beginPath();x.arc(px,py,42,0,7);x.fill();x.fillStyle=col;text(t,px,py+8,t.length>1?20:34,'center')}
+function interact(){
+ if(!st.done&&dist(st.p,st.puz)<125){st.done=true;st.stars++;st.coins+=5;st.msg='انفتح الحجر! النجوم تقودك إلى الحذاء السحري.';toast('لغز محلول • +1 نجمة • +5 قطع');save();return}
+ if(st.done&&!st.has&&dist(st.p,st.shoe)<125){st.has=true;st.stars+=2;st.coins+=15;st.msg='لقد وجدت الحذاء السحري! قدرة «الخطوة الخفية» أصبحت متاحة.';toast('الحذاء السحري • +2 نجمة • +15 قطعة');save();return}
+ if(st.has&&!st.found&&dist(st.p,st.secret)<125){st.found=true;st.stars+=2;st.coins+=20;st.msg='كشفت طريقًا سريًا! الآن تبدأ مهمة العصا السحرية.';toast('طريق سري • +2 نجمة • +20 قطعة');save();return}
+ if(st.has&&!st.found)st.msg='اقترب من علامة «السر» ثم اضغط تفاعل.';else if(st.done&&!st.has)st.msg='اقترب من الحذاء السحري ثم اضغط تفاعل.';else if(!st.done)st.msg='اقترب من حجر اللغز ثم اضغط تفاعل.';else st.msg='مهمتك التالية: العصا السحرية.';
+}
+function toast(m){st.msg=m;st.toast=150}
+function loop(){tick++;if(keys['arrowup']||keys['w'])move(0,-1);if(keys['arrowdown']||keys['s'])move(0,1);if(keys['arrowleft']||keys['a'])move(-1,0);if(keys['arrowright']||keys['d'])move(1,0);draw();requestAnimationFrame(loop)}
+function font(z,weight=400){x.font=weight+' '+z+'px system-ui,-apple-system,"Segoe UI",sans-serif'}
+function text(t,px,py,size=18,align='left',weight=400,alpha=1){x.save();x.globalAlpha=alpha;font(size,weight);x.textAlign=align;x.fillStyle='#fff';x.fillText(t,px,py);x.restore()}
+function rr(px,py,w,h,r,fill,alpha=1){x.save();x.globalAlpha=alpha;x.fillStyle=fill;x.beginPath();x.roundRect(px,py,w,h,r);x.fill();x.restore()}
+function glow(px,py,r,fill,alpha=.2){const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,fill);g.addColorStop(1,'transparent');x.save();x.globalAlpha=alpha;x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.restore()}
+function draw(){x.save();x.scale(s,s);tick%1000===0&&save();
+ // sky and ground
+ const sky=x.createLinearGradient(0,0,0,720);sky.addColorStop(0,'#09172a');sky.addColorStop(.55,'#12283b');sky.addColorStop(1,'#07131d');x.fillStyle=sky;x.fillRect(0,0,1280,720);
+ glow(640,330,410,'#5b7ea8',.08);glow(980,245,180,'#f4d58d',.12);
+ // distant mountains
+ x.fillStyle='#0c1b2b';x.beginPath();x.moveTo(0,310);x.lineTo(180,170);x.lineTo(330,295);x.lineTo(520,135);x.lineTo(700,305);x.lineTo(900,155);x.lineTo(1110,300);x.lineTo(1280,190);x.lineTo(1280,520);x.lineTo(0,520);x.closePath();x.fill();
+ // clearing
+ x.fillStyle='#142d37';x.beginPath();x.ellipse(640,420,530,220,0,0,7);x.fill();
+ // path
+ x.fillStyle='#3a3b35';x.beginPath();x.moveTo(530,590);x.quadraticCurveTo(600,475,670,410);x.quadraticCurveTo(740,360,820,315);x.lineTo(900,345);x.quadraticCurveTo(790,430,720,510);x.quadraticCurveTo(680,570,660,610);x.closePath();x.fill();
+ // trees
+ for(let i=0;i<11;i++){let px=80+i*112+(i%2)*25,py=305+(i%3)*55;tree(px,py,0.75+(i%3)*.08)}
+ // ruins
+ rr(150,245,125,145,12,'#233544');for(let i=0;i<4;i++){rr(165+i*28,270,18,105,3,'#314657')}rr(180,230,65,20,5,'#334b59');
+ // magical particles
+ for(let i=0;i<18;i++){const a=i*2.4+tick*.006,rad=65+(i%5)*20,px=st.shoe.x+Math.cos(a)*rad,py=st.shoe.y+Math.sin(a)*rad*.55;glow(px,py,14,'#f4d58d',.18);x.fillStyle='#f4d58d';x.globalAlpha=.55;x.beginPath();x.arc(px,py,2+(i%2),0,7);x.fill();x.globalAlpha=1}
+ // top title
+ rr(28,22,1224,105,22,'#07111d',.78);text('الحذاء السحري',58,62,31,'left',700);text('المغامرة الأولى',58,94,17,'left',400,.72);
+ rr(890,38,155,55,16,'#172b3d',.9);text('★ '+st.stars,965,73,19,'center',700);rr(1055,38,155,55,16,'#172b3d',.9);text('◈ '+st.coins,1132,73,19,'center',700);
+ // quest card
+ rr(870,112,340,112,18,'#08131f',.88);text('المهمة الحالية',1185,142,15,'right',600,.7);let q=st.found?'العصا السحرية متاحة':st.has?'اعثر على الطريق السري':'اعثر على الحذاء السحري';text(q,1185,175,19,'right',700);text(st.found?'اكتملت المغامرة الأولى ✓':'اقترب من الهدف ثم اضغط تفاعل',1185,202,14,'right',400,.7);
+ // puzzle
+ if(!st.done){stone(st.puz);glow(st.puz.x,st.puz.y,125,'#7fd1c5',.08)}else node(st.puz.x,st.puz.y,'✓','#9de3b2');
+ // shoe / secret
+ if(!st.has){glow(st.shoe.x,st.shoe.y,145,'#f4d58d',.16);shoe(st.shoe.x,st.shoe.y)}else node(st.shoe.x,st.shoe.y,'✓','#9de3b2');
+ if(st.has&&!st.found){glow(st.secret.x,st.secret.y,120,'#9de3b2',.12);node(st.secret.x,st.secret.y,'✦','#9de3b2');text('طريق خفي',st.secret.x,st.secret.y+63,16,'center',500,.8)}else if(st.found)node(st.secret.x,st.secret.y,'✓','#9de3b2');
+ // player
+ glow(st.p.x,st.p.y,65,'#f4d58d',.1);player(st.p.x,st.p.y);
+ // bottom message
+ rr(28,610,1224,78,20,'#06101a',.93);text(st.msg,640,642,17,'center',500);text(st.toast>0?'':'اسحب الشاشة للحركة',640,670,12,'center',400,.48);if(st.toast>0)st.toast--;
+ // controls
+ const bs=[[92,555,'↑'],[92,620,'↓'],[22,588,'←'],[162,588,'→']];for(const b of bs){rr(b[0],b[1],52,52,16,'#1a3145',.94);text(b[2],b[0]+26,b[1]+34,24,'center',700)}
+ rr(1070,548,145,65,20,'#6b4ea2',.96);text('تفاعل',1142,588,19,'center',700);
+ x.restore();}
+function tree(px,py,k){x.fillStyle='#17251f';x.fillRect(px-7,py,14,75*k);for(let j=0;j<3;j++){x.fillStyle=j===1?'#25473e':'#1d3a35';x.beginPath();x.arc(px+(j-1)*20,py-j*23,32*k,0,7);x.fill()}}
+function stone(p){x.save();x.translate(p.x,p.y);x.fillStyle='#40576a';x.beginPath();x.moveTo(-48,25);x.lineTo(-38,-25);x.lineTo(-5,-48);x.lineTo(42,-28);x.lineTo(50,20);x.lineTo(20,47);x.lineTo(-30,42);x.closePath();x.fill();x.fillStyle='#1d3344';x.beginPath();x.arc(0,0,31,0,7);x.fill();text('؟',0,12,32,'center',800);x.restore();text('حجر اللغز',p.x,p.y+78,16,'center',500,.85)}
+function shoe(px,py){x.save();x.translate(px,py);x.rotate(-.12);x.fillStyle='#6b4ea2';x.beginPath();x.moveTo(-48,20);x.quadraticCurveTo(-42,-25,-8,-38);x.quadraticCurveTo(30,-45,50,-5);x.lineTo(70,15);x.quadraticCurveTo(65,35,38,38);x.lineTo(-28,37);x.quadraticCurveTo(-58,37,-48,20);x.fill();x.fillStyle='#d9a9e8';x.beginPath();x.moveTo(-28,-28);x.quadraticCurveTo(2,-8,28,-23);x.lineTo(18,-3);x.quadraticCurveTo(-4,7,-30,-10);x.closePath();x.fill();x.fillStyle='#f4d58d';x.beginPath();x.arc(0,-31,8,0,7);x.fill();x.restore();text('الحذاء السحري',px,py+82,18,'center',700);}
+function node(px,py,t,col){glow(px,py,75,col,.12);x.fillStyle='#2b4155';x.beginPath();x.arc(px,py,43,0,7);x.fill();x.strokeStyle=col;x.lineWidth=2;x.stroke();text(t,px,py+8, t.length>1?20:29,'center',800);}
+function player(px,py){x.fillStyle='#d9e5ee';x.beginPath();x.arc(px,py-18,14,0,7);x.fill();x.fillStyle='#5b3d7e';x.beginPath();x.arc(px,py+8,22,0,7);x.fill();x.fillStyle='#f4d58d';x.beginPath();x.arc(px+18,py+3,6,0,7);x.fill();}
 loop();
 </script></body></html>
