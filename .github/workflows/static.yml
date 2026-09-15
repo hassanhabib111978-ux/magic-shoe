@@ -29,7 +29,12 @@ jobs:
         run: |
           cp game.html index.html
           sed -i "s#scene.add(new THREE.DirectionalLight(0x779cff,.55).position.set(30,18,-30));#const moon=new THREE.DirectionalLight(0x779cff,.55);moon.position.set(30,18,-30);scene.add(moon);#" index.html
-          grep -q "const moon=new THREE.DirectionalLight" index.html
+          sed -i 's#const THREE=await import('\''./vendor/three.module.js'\'');#const THREE=await import('\''./vendor/three.module.js'\'');window.__MAGIC_THREE=THREE;#' index.html
+          sed -i 's#const shoe=new THREE.Group();shoe.position#const shoe=new THREE.Group();window.__magicShoe=shoe;shoe.position#' index.html
+          sed -i 's#</body>#<script src="./shoe_visual.js"></script></body>#' index.html
+          grep -q "window.__MAGIC_THREE=THREE" index.html
+          grep -q "window.__magicShoe=shoe" index.html
+          grep -q "shoe_visual.js" index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
