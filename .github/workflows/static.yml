@@ -32,8 +32,11 @@ jobs:
           sed -i 's/}catch(e){throw e}//' index.html
           # Keep the directional light construction valid.
           sed -i "s#scene.add(new THREE.DirectionalLight(0x779cff,.55).position.set(30,18,-30));#const moon=new THREE.DirectionalLight(0x779cff,.55);moon.position.set(30,18,-30);scene.add(moon);#" index.html
-          # Aim the camera into the game world; the default camera looks horizontally and can miss the ground/world.
-          sed -i 's#camera.position.set(0,6,11);#camera.position.set(0,6,11);camera.lookAt(0,1,-8);#' index.html
+          # Put the first playable scene inside the camera frustum.
+          sed -i 's#camera.position.set(0,6,11);#camera.position.set(0,7,14);camera.lookAt(0,1,4);#' index.html
+          sed -i 's#shoe.position.set(7,2.3,-8)#shoe.position.set(4,2.3,2)#' index.html
+          sed -i 's#player.position.set(0,0,8)#player.position.set(0,0,6)#' index.html
+          sed -i 's#shrine.position.set(-11,0,-14)#shrine.position.set(-6,0,-3)#' index.html
           # Expose Three.js and the hero shoe to the visual enhancement script.
           sed -i 's#const THREE=await import('\''./vendor/three.module.js'\'');#const THREE=await import('\''./vendor/three.module.js'\'');window.__MAGIC_THREE=THREE;#' index.html
           sed -i 's#const shoe=new THREE.Group();shoe.position#const shoe=new THREE.Group();window.__magicShoe=shoe;shoe.position#' index.html
