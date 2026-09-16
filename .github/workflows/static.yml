@@ -28,26 +28,10 @@ jobs:
       - name: Prepare final entry page
         run: |
           cp game.html index.html
-          # Fix the source's invalid nested catch before deployment.
-          sed -i 's/}catch(e){throw e}//' index.html
-          # Keep the directional light construction valid.
-          sed -i "s#scene.add(new THREE.DirectionalLight(0x779cff,.55).position.set(30,18,-30));#const moon=new THREE.DirectionalLight(0x779cff,.55);moon.position.set(30,18,-30);scene.add(moon);#" index.html
-          # Put the first playable scene inside the camera frustum.
-          sed -i 's#camera.position.set(0,6,11);#camera.position.set(0,7,14);camera.lookAt(0,1,4);#' index.html
-          sed -i 's#shoe.position.set(7,2.3,-8)#shoe.position.set(4,2.3,2)#' index.html
-          sed -i 's#player.position.set(0,0,8)#player.position.set(0,0,6)#' index.html
-          sed -i 's#shrine.position.set(-11,0,-14)#shrine.position.set(-6,0,-3)#' index.html
-          # Expose Three.js and the hero shoe to the visual enhancement script.
-          sed -i 's#const THREE=await import('\''./vendor/three.module.js'\'');#const THREE=await import('\''./vendor/three.module.js'\'');window.__MAGIC_THREE=THREE;#' index.html
-          sed -i 's#const shoe=new THREE.Group();shoe.position#const shoe=new THREE.Group();window.__magicShoe=shoe;shoe.position#' index.html
-          # Add a clear WebGL2/runtime diagnostic instead of a mysterious black screen.
-          sed -i 's#<script type="module">#<script>(function(){function show(msg){var x=document.getElementById("loading");if(x)x.innerHTML="<div id=\"err\"><div style=\"font-size:55px\">⚠️</div><b>تشخيص تشغيل اللعبة</b><br>"+msg+"<br><br><button class=\"btn\" onclick=\"location.reload()\">إعادة المحاولة</button></div>";if(x)x.style.display="grid"}window.addEventListener("error",function(){show("حدث خطأ أثناء تشغيل المشهد. الهاتف ليس بالضرورة غير قادر على تشغيل 3D.")});window.addEventListener("unhandledrejection",function(){show("حدث خطأ أثناء تشغيل المشهد. الهاتف ليس بالضرورة غير قادر على تشغيل 3D.")});var p=document.createElement("canvas"),gl=null;try{gl=p.getContext("webgl2")}catch(e){}if(!gl)show("هذا المتصفح لا يوفر WebGL 2 حالياً. جرّب Chrome أو تحديث المتصفح.")})();</script><script type="module">#' index.html
-          sed -i 's#</body>#<script src="./shoe_visual.js"></script></body>#' index.html
-          grep -q "window.__MAGIC_THREE=THREE" index.html
-          grep -q "window.__magicShoe=shoe" index.html
-          grep -q "shoe_visual.js" index.html
-          grep -q 'id="loading"' index.html
-          ! grep -q 'catch(e){throw e}' index.html
+          test -s index.html
+          test -s vendor/three.module.js
+          grep -q "WebGLRenderer" index.html
+          grep -q "requestAnimationFrame" index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
